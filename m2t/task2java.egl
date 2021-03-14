@@ -1,0 +1,22 @@
+package [%=m.name.toLowerCase()%];
+
+[%=out.startPreserve("/*", "*/", "Imports", true)%]
+[%=out.stopPreserve()%]
+
+public class [%=t.name.ftuc()%] implements Runnable {
+	
+	[%=out.startPreserve("/*", "*/", "Task", true)%]
+	
+	public static void thread(Runnable runnable, boolean daemon) {
+		Thread brokerThread = new Thread(runnable);
+		brokerThread.setDaemon(daemon);
+		brokerThread.start();
+	}
+	
+	public void run() {
+		
+	}
+	
+	[%=out.stopPreserve()%]
+	
+}

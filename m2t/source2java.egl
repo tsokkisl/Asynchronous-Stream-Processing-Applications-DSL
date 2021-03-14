@@ -1,0 +1,22 @@
+package [%=m.name.toLowerCase()%];
+
+[%=out.startPreserve("/*", "*/", "Imports", true)%]
+[%=out.stopPreserve()%]
+
+public class [%=s.name.ftuc()%] {
+	
+	[%=out.startPreserve("/*", "*/", "Source", true)%]
+	
+	public static void thread(Runnable runnable, boolean daemon) {
+		Thread brokerThread = new Thread(runnable);
+		brokerThread.setDaemon(daemon);
+		brokerThread.start();
+	}
+	
+	public void run([%=m.name.ftuc()%] [%=m.name%]) {
+		
+		
+	}
+	
+	[%=out.stopPreserve()%]
+}

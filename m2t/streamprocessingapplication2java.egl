@@ -1,0 +1,40 @@
+package [%=m.name.toLowerCase()%];
+
+public class [%=m.name.ftuc()%] {
+	
+	[%for (component in Component.all) { %]
+		[% if (not component.isKindOf(Stream)) { %]
+		
+	protected [%=component.name.ftuc()%] [%=component.name%] = create[%=component.name.ftuc()%]();
+		
+		[%}%]
+	[%}%]
+	
+	public static void main(String[] args) {
+		new [%=m.name.ftuc()%]().run();
+	}
+	
+	public void run() {
+		get[%=m.getEntryPoint().name.ftuc()%]().run(this);	
+	}
+	
+	[%for (component in m.components){%]
+		[% if (not component.isKindOf(Stream)) {%]
+		
+	protected [%=component.name.ftuc()%] create[%=component.name.ftuc()%]() {
+		return new [%=component.name.ftuc()%]();
+	}
+	
+	protected [%=component.name.ftuc()%] get[%=component.name.ftuc()%]() {
+		return [%=component.name%];
+	}
+	
+		[%}%]
+	[%}%]
+	
+}
+[%
+operation StreamProcessingApplication getEntryPoint() {
+	return Component.all.selectOne(c|c.incoming.isEmpty());
+}
+%]

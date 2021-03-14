@@ -1,0 +1,18 @@
+package [%=m.name.toLowerCase()%];
+
+[%=out.startPreserve("/*", "*/", "Imports", true)%]
+[%=out.stopPreserve()%]
+
+public class [%=sn.name.ftuc()%] implements Runnable {
+
+	[%=out.startPreserve("/*", "*/", "Sink", true)%]
+	
+	String dir = "[%=sn.destination%]";
+	
+	public void run() {
+		
+	}
+	
+	[%=out.stopPreserve()%]
+	
+}

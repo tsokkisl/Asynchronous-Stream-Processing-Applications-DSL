@@ -1,0 +1,140 @@
+/* Check if there is only one Source within the model */
+context StreamProcessingApplication {
+	constraint OnlyOneSource {
+		check: Source.getAllOfKind().size() == 1
+		
+		message: "The model must have only one source, but has " + Source.getAllOfKind().size() + " sources."
+	}
+}
+
+/* Check if there is at least one Task within the model */
+context StreamProcessingApplication {
+	constraint AtLeastOneTask {
+		check: Task.getAllOfKind().size() > 0
+		
+		message: "The model must have at least 1 task, but has " + Task.getAllOfKind().size() + " tasks."
+	}
+}
+
+/* Check if there is at least one Sink within the model */
+context StreamProcessingApplication {
+	constraint AtLeastOneSink {
+		check: Sink.getAllOfKind().size() > 0
+		
+		message: "The model must have at least 1 sink, but has " + Sink.getAllOfKind().size() + " sinks."
+	}
+}
+
+/* Check if a Source is disconnected from the model, does not have incoming connections
+ and communicates with other components only through Streams */
+context Source {
+	constraint NotDisconnected {
+		check: not self.outgoing.isEmpty()
+		
+		message: "Source: " + self.name + " is disconnected from the model."
+	}
+	constraint OnlyOutgoingConnections {
+		guard: self.satisfies("NotDisconnected")
+		
+		check: self.incoming.isEmpty()
+		
+		message: "Source: " + self.name + " cannot have incoming connection(s)."
+	}
+	constraint CheckForValidConnections {
+		guard: self.satisfies("NotDisconnected")
+		
+		check: self.outgoing.forAll(o | o.destination.isKindOf(Stream))
+		
+		message: "Source: " + self.name + " has invalid outgoing connection(s). Source: " + 
+		self.name + " can only connect to other Stream(s)."
+	}
+}
+
+/* Check if a Stream is disconnected from the model and communicates with other components which are not Streams */
+context Stream {
+	constraint NotDisconnected {
+		check: not self.incoming.isEmpty() and not self.outgoing.isEmpty()
+		
+		message: "Stream: " + self.name + " is disconnected from the model."
+	}
+	constraint CheckForValidConnections {
+		guard: self.satisfies("NotDisconnected")
+		
+		check: not self.incoming.exists(o | o.from.isKindOf(Stream)) and not self.outgoing.exists(o | o.destination.isKindOf(Stream))
+		
+		message: "Stream: " + self.name + " has invalid incoming or outgoing connection(s). Stream: " + 
+		self.name + " cannot directly connect to other Stream(s)."
+	}
+	/* Check if there is at least one Message within each stream */
+	constraint AtLeastOneMessageInEachStream {
+		check: self.linkedMessage.exists(m | m.isKindOf(Link))
+		
+		message: "Each stream must have at least 1 message, but " + self.name + " has 0 messages."
+	}
+}
+
+/* Check if a Task is disconnected from the model or communicates with other components only through Streams */
+context Task {
+	constraint NotDisconnected {
+		check: not self.incoming.isEmpty() and not self.outgoing.isEmpty()
+		
+		message: "Task: " + self.name + " is disconnected from the model."
+	}
+	constraint CheckForValidConnections {
+		guard: self.satisfies("NotDisconnected")
+		
+		check: self.incoming.forAll(o | o.from.isKindOf(Stream)) and self.outgoing.forAll(o | o.destination.isKindOf(Stream))
+		
+		message: "Task: " + self.name + " has invalid incoming or outgoing connection(s). Task: " + 
+		self.name + " can only connect to other Stream(s)."
+	}
+}
+
+/* Check if a Sink is disconnected from the model, does not have outgoing connections
+ and communicate with other components only through Streams */
+context Sink {
+	constraint NotDisconnected {
+		check: self.incoming.isEmpty() != true
+		
+		message: "Sink: " + self.name + " is disconnected from the model."
+	}
+	constraint OnlyIncomingConnections {
+		guard: self.satisfies("NotDisconnected")
+		
+		check: self.outgoing.isEmpty()
+		
+		message: "Source: " + self.name + " cannot have outgoing connections."
+	}
+	constraint CheckForValidConnections {
+		guard: self.satisfies("NotDisconnected")
+		
+		check: self.incoming.forAll(o | o.from.isKindOf(Stream))
+		
+		message: "Sink: " + self.name + " has invalid incoming connection(s). Sink: " + 
+		self.name + " can only connect to other Stream(s)."
+	}
+}
+
+/* Check if a Component has a name defined which is a Java valid class name and it is unique within the model */
+context Component {
+	constraint NameIsDefined {
+		check: self.name.isDefined()
+		
+		message: "Name of " + self + " is not defined."
+	}
+	constraint ValidJavaClassName {
+		guard: self.satisfies("NameIsDefined")
+		
+		check: self.name.matches("^[A-Z][a-zA-Z0-9_]*$")
+		
+		message: self.name + " is not a Java valid class name."
+	}
+	constraint CheckForDublicatenNames {
+		check {
+			var names = Component.all.select(c | c.name == self.name);
+			return names.size() == 1;
+		}
+		
+		message: "The name " + self.name + " of " + self + " is not unique within the model."
+	}
+}

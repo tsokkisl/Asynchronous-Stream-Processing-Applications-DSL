@@ -1,0 +1,50 @@
+rule Model2App 
+	transform m : StreamProcessingApplication {
+
+	template : "streamprocessingapplication2java.egl"
+
+	parameters : Map{}
+
+	target : "../src-gen/" + m.name.toLowerCase() + "/" + m.name.ftuc() + ".java"
+}
+
+rule Source2Java 
+	transform s : Source {
+
+	template : "source2java.egl"
+
+	parameters : Map{
+		"m" = s.eContainer()
+	}
+
+	target : s.getJavaFileName()
+}
+
+rule Task2Java 
+	transform t : Task {
+
+	template : "task2java.egl"
+
+	parameters : Map{
+		"m" = t.eContainer()
+	}
+
+	target : t.getJavaFileName()
+}
+
+
+rule Sink2Java 
+	transform sn : Sink {
+
+	template : "sink2java.egl"
+
+	parameters : Map{
+		"m" = sn.eContainer()
+	}
+
+	target : sn.getJavaFileName()
+}
+
+operation Component getJavaFileName() {
+	return "../src-gen/" + self.eContainer.name.toLowerCase() + "/" + self.name.ftuc() + ".java";
+}

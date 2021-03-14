@@ -1,0 +1,57 @@
+[PROJECT_NAME]@namespace(uri="[PROJECT_NAME]", prefix="")
+package [PROJECT_NAME];
+
+@gmf.diagram
+class StreamProcessingApplication {
+	attr String name;
+	val Component[*] components;
+	val Connection[*] connections;
+	val Message[*] messages;
+	val Link[*] links;
+}
+
+@gmf.node(label="name", label.placement="external")
+abstract class Component {
+	attr String name;
+	ref Connection[*]#destination incoming;
+	ref Connection[*]#from outgoing;
+}
+
+@gmf.node(figure="svg", svg.uri="platform:/plugin/[PROJECT_NAME]/icons/source.svg", label.icon="false")
+class Source extends Component {
+	attr String source;
+}
+
+@gmf.node(figure="svg", svg.uri="platform:/plugin/[PROJECT_NAME]/icons/task.svg", label.icon="false")
+class Task extends Component {
+}
+
+@gmf.node(figure="svg", svg.uri="platform:/plugin/[PROJECT_NAME]/icons/sink.svg", label.icon="false")
+class Sink extends Component {
+	attr String destination;
+}
+
+@gmf.node(figure="svg", svg.uri="platform:/plugin/[PROJECT_NAME]/icons/stream.svg", label.icon="false")
+class Stream extends Component {
+	ref Link[*]#stream linkedMessage;
+}
+
+@gmf.link(source="from", target="destination", target.decoration="closedarrow")
+class Connection {
+	ref Component#outgoing from;
+	ref Component#incoming destination;
+}
+
+@gmf.link(source="stream", target="message")
+class Link {
+	ref Stream#linkedMessage stream;
+	ref Message#linkedStream message;
+}
+
+@gmf.node(figure="svg", svg.uri="platform:/plugin/[PROJECT_NAME]/icons/message.svg",
+label="header, body", label.pattern="{0}: {1}", label.icon="false", label.placement="external")
+class Message {
+	attr String header;
+	attr String body;
+	ref Link[*]#message linkedStream;
+}

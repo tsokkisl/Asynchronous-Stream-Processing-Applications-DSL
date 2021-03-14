@@ -1,0 +1,58 @@
+import "utilities.eol";
+
+/* Transform each of the components of the WordCountApplication model except from the connections,
+into components of the new WordCountApplicationWithLoggingTasks model */
+rule Link2Link
+	transform l1 : WordCountApplication!Link
+	to l2 : WordCountApplicationWithLoggingTasks!Link {
+		l2.stream = l1.stream;
+		l2.message = l1.message;
+	}
+		
+rule Source2Source
+	transform s1 : WordCountApplication!Source
+	to s2 : WordCountApplicationWithLoggingTasks!Source {		
+		s2.name = s1.name;
+		s2.source = s1.source;
+	}
+	
+rule Sink2Sink
+	transform s1 : WordCountApplication!Sink
+	to s2 : WordCountApplicationWithLoggingTasks!Sink {
+		s2.name = s1.name;
+		s2.destination = s1.destination;
+	}
+	
+rule Task2Task
+	transform t1 : WordCountApplication!Task
+	to t2 : WordCountApplicationWithLoggingTasks!Task {
+		t2.name = t1.name;
+	}
+
+rule Stream2Stream
+	transform s1 : WordCountApplication!Stream
+	to s2 : WordCountApplicationWithLoggingTasks!Stream {
+		s2.name = s1.name;
+		s2.linkedMessage = s1.linkedMessage;
+	}
+
+rule Message2Message
+	transform  m1 : WordCountApplication!Message
+	to m2 : WordCountApplicationWithLoggingTasks!Message {
+		m2.header = m1.header;
+		m2.body = m1.body;
+		m2.linkedStream = m1.linkedStream;
+	}
+	
+rule StreamProcessingApplication2StreamProcessingApplication
+	transform spa : WordCountApplication!StreamProcessingApplication
+	to spa2 : WordCountApplicationWithLoggingTasks!StreamProcessingApplication {
+		spa2.name = "Stream Processing Application With Logging Tasks";
+		spa2.links.addAll(spa.links.equivalent());
+		spa2.components.addAll(spa.components.equivalent());
+		spa2.messages.addAll(spa.messages.equivalent());
+		/* Set incoming and outgoing connections for all components, except those who begin from a stream component */
+		spa2.setConnections(spa);
+		/* Create the extra logger components for each task in the model */	
+		spa2.setLoggers(spa);
+	}

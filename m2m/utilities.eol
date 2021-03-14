@@ -1,0 +1,117 @@
+/* Set incoming and outgoing connections for all components, except those who begin from a stream component */
+operation WordCountApplicationWithLoggingTasks!StreamProcessingApplication setConnections
+(spa : WordCountApplication!StreamProcessingApplication) {
+	for (com in spa.components) {
+		for (i in com.incoming) {
+			if (not i.from.isKindOf(WordCountApplication!Stream)) {
+				var tempConnection : new WordCountApplicationWithLoggingTasks!Connection;
+				tempConnection.from = self.components.select(c | c.name == i.from.name)[0];
+				tempConnection.destination = self.components.select(c | c.name == i.destination.name)[0];
+				var connections = self.connections.select(c | c.from.isKindOf(WordCountApplicationWithLoggingTasks!Component));
+				if (not connections.exists(con | con.from.name.equals(tempConnection.from.name) 
+					and con.destination.name.equals(tempConnection.destination.name))) {
+					self.connections.add(tempConnection);
+				}
+			}
+		}
+		for (o in com.outgoing) {
+			if (not o.from.isKindOf(WordCountApplication!Stream)) {
+				var tempConnection : new WordCountApplicationWithLoggingTasks!Connection;
+				tempConnection.from = self.components.select(c | c.name == o.from.name)[0];
+				tempConnection.destination = self.components.select(c | c.name == o.destination.name)[0];
+				var connections = self.connections.select(c | c.from.isKindOf(WordCountApplicationWithLoggingTasks!Component));
+				if (not connections.exists(con | con.from.name.equals(tempConnection.from.name) 
+					and con.destination.name.equals(tempConnection.destination.name))) {
+					self.connections.add(tempConnection);
+				}
+			}
+		}
+	}
+}
+
+/* Create the extra logger components for each task in the model */
+operation WordCountApplicationWithLoggingTasks!StreamProcessingApplication setLoggers
+(spa : WordCountApplication!StreamProcessingApplication) {
+
+	var streams = self.components.select(c | c.isKindOf(WordCountApplication!Stream));
+	
+	var loggerStream : new WordCountApplicationWithLoggingTasks!Stream;
+	loggerStream.name = "LoggerSinkStream";
+			
+	var loggerSink : new WordCountApplicationWithLoggingTasks!Sink;
+	loggerSink.name = "LoggerSink";
+			
+	var logerStreamToLoggerSink : new WordCountApplicationWithLoggingTasks!Connection;
+	logerStreamToLoggerSink.from = loggerStream;
+	logerStreamToLoggerSink.destination = loggerSink;
+		
+	self.components.add(loggerStream);
+	self.components.add(loggerSink);
+	self.connections.add(logerStreamToLoggerSink);
+
+	for (s in streams) {
+		
+		var out = spa.components.select(l | l.name == s.name)[0].outgoing;
+		
+		for (o in out) {
+			
+			if (o.destination.isKindOf(WordCountApplication!Task)) {
+				var lt : new WordCountApplicationWithLoggingTasks!Task;
+				var lst : new WordCountApplicationWithLoggingTasks!Stream;
+				var lmessage : new WordCountApplicationWithLoggingTasks!Message;
+				var llink : new WordCountApplicationWithLoggingTasks!Link;
+				var fromStreamToLoggerTask : new WordCountApplicationWithLoggingTasks!Connection;
+				var fromLoggerTaskToLoggerStream : new WordCountApplicationWithLoggingTasks!Connection;
+				var fromLoggerStreamToTask : new WordCountApplicationWithLoggingTasks!Connection;
+				var fromLoggerTaskToLoggerSinkStream : new WordCountApplicationWithLoggingTasks!Connection;
+				
+				var task = self.components.select(c | c.name == o.destination.name)[0];
+				
+				fromStreamToLoggerTask.from = s;
+				fromStreamToLoggerTask.destination = lt;
+				
+				fromLoggerTaskToLoggerStream.from = lt;
+				fromLoggerTaskToLoggerStream.destination = lst;
+				
+				fromLoggerStreamToTask.from = lst;
+				fromLoggerStreamToTask.destination = task;
+				
+				fromLoggerTaskToLoggerSinkStream.from = lt;
+				fromLoggerTaskToLoggerSinkStream.destination = loggerStream;
+				
+				llink.message = lmessage;
+				llink.stream = lst;
+				
+				/* Set logger task properties */
+				lt.name = task.name.asString() + "Logger";
+				
+				/* Set message properties */
+				lmessage.header = s.linkedMessage.message[0].header.asString();
+				lmessage.body = s.linkedMessage.message[0].body.asString();
+				
+				/* Set logger stream properties */
+				lst.name = task.name + o.from.name;
+		
+				self.components.add(lt);
+				self.components.add(lst);
+				self.messages.add(lmessage);
+				self.links.add(llink);
+				self.connections.add(fromStreamToLoggerTask);
+				self.connections.add(fromLoggerTaskToLoggerStream);
+				self.connections.add(fromLoggerStreamToTask);
+				self.connections.add(fromLoggerTaskToLoggerSinkStream);
+			}
+			else {
+				
+				var tempConnection : new WordCountApplicationWithLoggingTasks!Connection;
+				tempConnection.from = s;
+				tempConnection.destination = self.components.select(sink | sink.name == o.destination.name)[0];
+				var connections = self.connections.select(c | c.from.isKindOf(WordCountApplicationWithLoggingTasks!Component));
+				if (not connections.exists(con | con.from.name.equals(tempConnection.from.name) 
+				and con.destination.name.equals(tempConnection.destination.name))) {
+					self.connections.add(tempConnection);
+				}
+			}
+		}
+	}
+}
